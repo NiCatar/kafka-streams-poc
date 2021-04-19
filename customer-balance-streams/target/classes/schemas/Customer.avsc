@@ -1,0 +1,25 @@
+{
+  "type": "record",
+  "name": "Customer",
+  "namespace": "com.github.nicatar.model",
+  "fields": [
+    {
+      "name": "name",
+      "type": [
+        "string"
+      ]
+    },
+    {
+      "name": "amount",
+      "type": [
+        "long"
+      ]
+    },
+    {
+      "name": "time",
+      "type": [
+        "long"
+      ]
+    }
+  ]
+}
