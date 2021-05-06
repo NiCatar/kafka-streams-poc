@@ -10,7 +10,7 @@ public class KafkaConfigs {
 
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
 
-    private static final Properties getKafkaStreamsConfig(String applicationId) {
+    private static Properties getKafkaStreamsConfig(String applicationId) {
         Properties config = new Properties();
 
         config.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
@@ -21,7 +21,7 @@ public class KafkaConfigs {
 
         config.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.EXACTLY_ONCE);
 
-//        config.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0); // No para produccion
+        config.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0); // No para produccion
 
 //        config.put("apicurio.registry.url", "http://localhost:8081/api");
 //        config.put("apicurio.registry.avro-datum-provider", ReflectAvroDatumProvider.class);
@@ -31,11 +31,11 @@ public class KafkaConfigs {
         return config;
     }
 
-    public static final Properties getKafkaStreamsConfigCustomerBalance() {
+    public static Properties getKafkaStreamsConfigCustomerBalance() {
         return getKafkaStreamsConfig("customer-balance");
     }
 
-    public static final Properties getKafkaStreamsConfigCustomerEnrichment() {
+    public static Properties getKafkaStreamsConfigCustomerEnrichment() {
         return getKafkaStreamsConfig("customer-enrichment");
     }
 }

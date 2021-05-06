@@ -20,16 +20,14 @@ public class CustomerEnrichmentTopology {
         final Serializer<JsonNode> jsonNodeSerializer = new JsonSerializer();
         final Deserializer<JsonNode> jsonNodeDeserializer = new JsonDeserializer();
 
-        final Serde<String> stringSerde = Serdes.String();
-        final Serde<Long> longSerde = Serdes.Long();
         final Serde<JsonNode> jsonSerde = Serdes.serdeFrom(jsonNodeSerializer, jsonNodeDeserializer);
 
 //        Consumed<String, JsonNode> consumed = Consumed.with(stringSerde, jsonSerde);
 //        Produced<String, JsonNode> produced = Produced.with(stringSerde, jsonSerde);
 
-        KStream<String, JsonNode> customerStream = builder.stream("customer_transaction_keyed", Consumed.with(stringSerde, jsonSerde));
+        KStream<String, JsonNode> customerStream = builder.stream("customer_transaction_keyed", Consumed.with(Serdes.String(), jsonSerde));
 
-        GlobalKTable<String, JsonNode> customerBalanceGlobalTable = builder.globalTable("customer_balance", Consumed.with(stringSerde, jsonSerde));
+        GlobalKTable<String, JsonNode> customerBalanceGlobalTable = builder.globalTable("customer_balance", Consumed.with(Serdes.String(), jsonSerde));
 
         KStream<String, JsonNode> customerEnrichment =
                 customerStream.join(customerBalanceGlobalTable,
@@ -42,7 +40,7 @@ public class CustomerEnrichmentTopology {
 
                 );
 
-        customerEnrichment.to("customer_enrichment", Produced.with(stringSerde, jsonSerde));
+        customerEnrichment.to("customer_enrichment", Produced.with(Serdes.String(), jsonSerde));
 
     }
 

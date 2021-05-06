@@ -15,7 +15,7 @@ import java.util.concurrent.*;
 public class CustomerTransactionProducer {
     Logger logger = LoggerFactory.getLogger(CustomerTransactionProducer.class.getName());
 
-    Queue<Customer> ch = new LinkedBlockingQueue<Customer>();
+    Queue<Customer> ch = new LinkedBlockingQueue<>();
 
     public static void main(String[] args) {
         new CustomerTransactionProducer().run();
@@ -24,23 +24,23 @@ public class CustomerTransactionProducer {
     public void run() {
         logger.info("Running application");
         KafkaProducer<String, String> producer = KafkaClient.getKafkaProducer();
-        addShutdownHook(producer, "closing producer...");
+        Runtime.getRuntime().addShutdownHook(new Thread(producer::close));
 
-        Thread dataFactory = new Thread(() -> dataFactory(ch));
+        Thread dataFactory = new Thread(() -> enqueueRandomCustomer(ch));
         dataFactory.start();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> dataFactory.interrupt()));
+        Runtime.getRuntime().addShutdownHook(new Thread(dataFactory::interrupt));
 
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-        Runtime.getRuntime().addShutdownHook(new Thread(()-> executorService.shutdown()));
+        Runtime.getRuntime().addShutdownHook(new Thread(executorService::shutdown));
 
-        Runnable runner = () -> this.sendEnqueueCustomers(producer, ch, 1200);
+        Runnable runner = () -> this.publishEnqueuedCustomers(producer, ch, 5000);
 
-        ScheduledFuture<?> schedule = executorService.scheduleAtFixedRate(runner, 1, 1, TimeUnit.SECONDS);
+        ScheduledFuture<?> schedule = executorService.scheduleAtFixedRate(runner, 1, 5, TimeUnit.SECONDS);
         Runtime.getRuntime().addShutdownHook(new Thread(()-> schedule.cancel(false)));
 
     }
 
-    private void sendEnqueueCustomers(KafkaProducer<String, String> producer, Queue<Customer> ch, int cant) {
+    private void publishEnqueuedCustomers(KafkaProducer<String, String> producer, Queue<Customer> ch, int cant) {
         if(ch == null) return;
         logger.info("Send: {} records", Math.min(ch.size(), cant));
         ObjectMapper objectMapper = new ObjectMapper();
@@ -51,7 +51,7 @@ public class CustomerTransactionProducer {
 
             try {
                 String body = objectMapper.writeValueAsString(currentCustomer);
-                ProducerRecord<String, String> record = new ProducerRecord<String, String>("customers_transfer", body);
+                ProducerRecord<String, String> record = new ProducerRecord<>("customers_transfer", body);
                 producer.send(record, (recordMetadata, e) -> {
                     if (e != null) e.printStackTrace();
                 });
@@ -63,23 +63,9 @@ public class CustomerTransactionProducer {
 
     }
 
-    private void addShutdownHook(AutoCloseable closeable, String message) {
-        if (closeable != null) {
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
-                    logger.info(message);
-                    closeable.close();
-                } catch (Exception var3) {
-                    this.logger.error("Error processing closeable", var3);
-                }
+    private void enqueueRandomCustomer(Queue<Customer> ch) {
 
-            }));
-        }
-    }
-
-    private void dataFactory(Queue<Customer> ch) {
-
-        List<String> custormersName = Arrays.asList("Nicolas", "Hector", "Noelia", "Magali", "Pepe", "Pepon");
+        List<String> customersName = Arrays.asList("Nicolas", "Hector", "Noelia", "Magali", "Damian", "Raul");
         logger.info("Running data factory");
 
         while(!Thread.interrupted()) {
@@ -87,7 +73,7 @@ public class CustomerTransactionProducer {
                 continue;
             }
 
-            for (String name : custormersName) {
+            for (String name : customersName) {
                 int randomMoney = ((int) (Math.random() * (10000 - 1))) + 1;
                 ch.offer(new Customer(name, randomMoney, new Date()));
             }

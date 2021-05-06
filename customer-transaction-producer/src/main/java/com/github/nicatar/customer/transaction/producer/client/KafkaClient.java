@@ -9,12 +9,12 @@ import org.slf4j.LoggerFactory;
 import java.util.Properties;
 
 public class KafkaClient {
-    private static Logger logger = LoggerFactory.getLogger(KafkaClient.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(KafkaClient.class.getName());
 
     public static KafkaProducer<String, String> getKafkaProducer() {
         Properties config = KafkaConfig.getProducerConfig();
         logger.info("Generating KafkaProducer");
-        return new KafkaProducer<String, String>(config);
+        return new KafkaProducer<>(config);
     }
 
 

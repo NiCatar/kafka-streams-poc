@@ -10,7 +10,7 @@ public class KafkaConfig {
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
 
 
-    public static final Properties getProducerConfig() {
+    public static Properties getProducerConfig() {
         Properties config = new Properties();
 
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);

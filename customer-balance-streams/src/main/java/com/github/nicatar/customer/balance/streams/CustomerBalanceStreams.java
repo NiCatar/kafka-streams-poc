@@ -2,7 +2,7 @@ package com.github.nicatar.customer.balance.streams;
 
 import com.github.nicatar.customer.balance.streams.config.KafkaConfigs;
 import com.github.nicatar.customer.balance.streams.topology.CustomerEnrichmentTopology;
-import com.github.nicatar.customer.balance.streams.topology.TrasactionsBalanceMoneyTopology;
+import com.github.nicatar.customer.balance.streams.topology.TransactionsBalanceMoneyTopology;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
@@ -13,7 +13,7 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
 public class CustomerBalanceStreams {
-    private Logger logger = LoggerFactory.getLogger(CustomerBalanceStreams.class.getName());
+    private final Logger logger = LoggerFactory.getLogger(CustomerBalanceStreams.class.getName());
 
     public static void main(String[] args) {
         new CustomerBalanceStreams().run();
@@ -25,21 +25,21 @@ public class CustomerBalanceStreams {
 
         // Customer balance
         StreamsBuilder builderCustomerBalance = new StreamsBuilder();
-        TrasactionsBalanceMoneyTopology transactionBalanceTopology = new TrasactionsBalanceMoneyTopology();
+        TransactionsBalanceMoneyTopology transactionBalanceTopology = new TransactionsBalanceMoneyTopology();
         transactionBalanceTopology.addTopologyTo(builderCustomerBalance);
 
         Topology topologyCustomerBalance = builderCustomerBalance.build();
         Properties kafkaStreamsConfigCustomerBalance = KafkaConfigs.getKafkaStreamsConfigCustomerBalance();
         System.out.println(topologyCustomerBalance.describe());
 
-        KafkaStreams streamsCustomerrBalance = new KafkaStreams(topologyCustomerBalance, kafkaStreamsConfigCustomerBalance);
-        System.out.println(streamsCustomerrBalance);
+        KafkaStreams streamsCustomerBalance = new KafkaStreams(topologyCustomerBalance, kafkaStreamsConfigCustomerBalance);
+        System.out.println(streamsCustomerBalance);
 
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Closing Kafka Streams Customer balance");
 
-            streamsCustomerrBalance.close();
+            streamsCustomerBalance.close();
             latch.countDown();
         }));
 
@@ -55,8 +55,6 @@ public class CustomerBalanceStreams {
         KafkaStreams streamsCustomerEnrichment = new KafkaStreams(topologyCustomerEnrichment, kafkaStreamsConfigCustomerEnrichment);
         System.out.println(streamsCustomerEnrichment);
 
-
-
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Closing Kafka Streams Customer Enrichment");
 
@@ -66,13 +64,14 @@ public class CustomerBalanceStreams {
 
 
         try {
-            streamsCustomerrBalance.cleanUp(); // no en produccion
-            streamsCustomerrBalance.start();
+            streamsCustomerBalance.cleanUp(); // no en produccion
+            streamsCustomerBalance.start();
 
             streamsCustomerEnrichment.cleanUp(); // no en prod
             streamsCustomerEnrichment.start();
 
             latch.await();
+            logger.info("Closing Application");
         } catch (Throwable e) {
             System.exit(1);
         }

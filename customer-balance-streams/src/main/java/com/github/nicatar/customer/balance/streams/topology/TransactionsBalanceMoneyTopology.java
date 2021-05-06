@@ -18,7 +18,7 @@ import org.apache.kafka.streams.kstream.*;
 import java.time.Instant;
 import java.util.Objects;
 
-public class TrasactionsBalanceMoneyTopology {
+public class TransactionsBalanceMoneyTopology {
 
 //    private ObjectMapper om = new ObjectMapper();
 
@@ -33,19 +33,17 @@ public class TrasactionsBalanceMoneyTopology {
         final Serializer<JsonNode> jsonNodeSerializer = new JsonSerializer();
         final Deserializer<JsonNode> jsonNodeDeserializer = new JsonDeserializer();
 
-        final Serde<String> stringSerde = Serdes.String();
-        final Serde<Long> longSerde = Serdes.Long();
         final Serde<JsonNode> jsonSerde = Serdes.serdeFrom(jsonNodeSerializer, jsonNodeDeserializer);
 
-//        Consumed<String, JsonNode> consumed = Consumed.with(stringSerde, jsonSerde);
+        //(null, valor)
+        KStream<String, JsonNode> customersJsonValues = builder.stream("customers_transfer", Consumed.with(Serdes.String(), jsonSerde));
 
-        KStream<String, JsonNode> customersJsonValues = builder.stream("customers_transfer", Consumed.with(stringSerde, jsonSerde));
-
+        //(nombre, valor)
         KStream<String, JsonNode> customerKeyed = customersJsonValues.selectKey(this::getCustomerName, Named.as("select-name-as-key"));
 
         customerKeyed.to("customer_transaction_keyed");
 
-        customerKeyed = builder.stream("customer_transaction_keyed", Consumed.with(stringSerde, jsonSerde));
+        customerKeyed = builder.stream("customer_transaction_keyed", Consumed.with(Serdes.String(), jsonSerde));
 
         ObjectNode initialBalance = JsonNodeFactory.instance.objectNode();
         initialBalance.put("count", 0);
@@ -53,21 +51,22 @@ public class TrasactionsBalanceMoneyTopology {
         initialBalance.put("time", Instant.ofEpochMilli(0L).toEpochMilli());
 
         KTable<String, JsonNode> values = customerKeyed
+                //(pepe, 1)(pepe, 1)( pedro, 1)(raul,1) -> ((pepe,1)(pepe,1)) ((pedro,1)) ((raul,1))
                 .groupByKey()
                 .aggregate(
                         () -> initialBalance,
                         (key, transaction, balance) -> newBalance(transaction, balance),
                         Named.as("customer-balance-aggregate"),
-                        Materialized.with(stringSerde, jsonSerde)
+                        Materialized.with(Serdes.String(), jsonSerde)
                 );
 
         values.toStream(Named.as("table_to_streamable"))
-                .to("customer_balance", Produced.with(stringSerde, jsonSerde));
+                .to("customer_balance", Produced.with(Serdes.String(), jsonSerde));
 
     }
 
     private String getCustomerName(String key, JsonNode customer) {
-        System.out.println("name as key -- " + customer);
+//        System.out.println("name as key -- " + customer);
         return customer.get("Name").asText();
     }
 
@@ -75,14 +74,14 @@ public class TrasactionsBalanceMoneyTopology {
 
         ObjectNode newBalance = JsonNodeFactory.instance.objectNode();
         newBalance.put("count", balance.get("count").asInt() + 1);
-        newBalance.put("balance", balance.get("balance").asInt() + transaction.get("amount").asInt());
+        newBalance.put("balance", Math.abs(balance.get("balance").asInt()) + Math.abs(transaction.get("amount").asInt()));
 
-        Long balanceEpoch = balance.get("time").asLong();
-        Long transactionEpoch = transaction.get("time").asLong();
+        long balanceEpoch = balance.get("time").asLong();
+        long transactionEpoch = transaction.get("time").asLong();
         Instant newBalanceInstant = Instant.ofEpochMilli(Math.max(balanceEpoch, transactionEpoch));
         newBalance.put("time", newBalanceInstant.toString());
 
-        System.out.println("Aggregate iteration before: " + balance + " after: " + newBalance);
+//        System.out.println("Aggregate iteration before: " + balance + " after: " + newBalance);
 
         return newBalance;
     }
