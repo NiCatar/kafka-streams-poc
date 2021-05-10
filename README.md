@@ -93,7 +93,7 @@ mvn clean package && java -jar target/*s.jar
 ### Corremos los streams
 
 ```bash
-cd customer-transaction-producer
+cd customer-balance-streams
 
 mvn clean package && java -jar target/*s.jar
 ```
