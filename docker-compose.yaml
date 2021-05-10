@@ -35,7 +35,6 @@ services:
     depends_on:
       - zookeeper
 
-
   schema-registry:
     container_name: schema-registry
     image: apicurio/apicurio-registry-mem:1.2.2.Final
@@ -63,15 +62,6 @@ services:
       - kafka-network
     depends_on:
       - kafka1
-
-  infinispan:
-    container_name: infinispan
-    image: quay.io/infinispan/server:12.1
-    ports:
-      - 11222:11222
-    environment:
-      USER: username
-      PASS: password
 
 networks:
   kafka-network:
